@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from core.dependencies import get_current_user
 from crud.product import (
     create_product,
     delete_product,
@@ -12,18 +13,10 @@ from crud.product import (
     get_products,
     update_product,
 )
-from database.db import SessionLocal
+from database.db import SessionLocal, get_db
 from schemas.product import ProductCreate, ProductList, ProductOut
 
-router = APIRouter(prefix="/products", tags=["products"])
-
-# Dependency to get the database session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+router = APIRouter(prefix="/products", tags=["products"], dependencies=[Depends(get_current_user)])
 
 def encode_to_base64(image_path: str, image_type: str = "png") -> str:
     # Check if the file exists
@@ -52,18 +45,18 @@ def read_product(product_id: int, db: Annotated[Session, Depends(get_db)]):
     product.image = encode_to_base64(product.image) # type: ignore
     return product
 
-@router.post("/", response_model=ProductOut)
+@router.post("/create", response_model=ProductOut)
 def create_new_product(product: ProductCreate, db: Annotated[Session, Depends(get_db)]):
     return create_product(db, product)
 
-@router.put("/{product_id}", response_model=ProductOut)
+@router.put("/update/{product_id}", response_model=ProductOut)
 def update_existing_product(product_id: int, product: ProductCreate, db: Annotated[Session, Depends(get_db)]):
     db_product = update_product(db, product_id, product)
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
 
-@router.delete("/{product_id}")
+@router.delete("/delete/{product_id}")
 def delete_existing_product(product_id: int, db: Annotated[Session, Depends(get_db)]):
     db_product = delete_product(db, product_id)
     if not db_product:
