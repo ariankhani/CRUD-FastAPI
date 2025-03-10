@@ -1,13 +1,8 @@
 from fastapi import FastAPI
-from sqlalchemy.orm import declarative_base
 
-from database.db import engine
-
-# from models.product import Base
-# from models.users import Base
+import models
+from database.db import Base, engine
 from routes import product, user
-
-Base = declarative_base()
 
 app = FastAPI()
 
