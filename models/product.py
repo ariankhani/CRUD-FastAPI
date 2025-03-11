@@ -9,4 +9,4 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     price = Column(Float, nullable=False)
-    image = Column(String, nullable=False)
+    image = Column(String, index=True)

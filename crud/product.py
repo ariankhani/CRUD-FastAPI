@@ -10,8 +10,8 @@ def get_product(db: Session, product_id: int):
 def get_products(db: Session, skip: int = 0, limit: int = 10):
     return db.query(Product).offset(skip).limit(limit).all()
 
-def create_product(db: Session, product: ProductCreate):
-    db_product = Product(name=product.name, price=product.price, image=product.image)
+def create_product(db: Session, product: ProductCreate, image_path: str):
+    db_product = Product(name=product.name, price=product.price, image=image_path)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)

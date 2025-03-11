@@ -1,9 +1,10 @@
 import base64
 import os
+import shutil
 from functools import wraps
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -42,7 +43,7 @@ def encode_to_base64(image_path: str, image_type: str = "png") -> str:
     base64_encoded = base64.b64encode(image_data).decode("utf-8")
     return f"data:image/{image_type};base64,{base64_encoded}"
 
-
+# Product List
 @router.get(
     "/",
     response_model=ProductList,
@@ -56,29 +57,65 @@ def read_products(
 ):
     products = get_products(db, skip=skip, limit=limit)
     if not products:
-        return JSONResponse(status_code=404, content={response[404]})
+        return JSONResponse(status_code=404, content={"detail": "No product found"})
+
     for product in products:
-        product.image = encode_to_base64(product.image)  # type: ignore
+        image_path = product.image.lstrip("/")
+
+        if not os.path.exists(image_path):  # noqa: PTH110
+            raise HTTPException(
+                status_code=404,
+                detail=f"Error reading image: file not found at '{image_path}'"
+            )
+        product.image = encode_to_base64(image_path)  # type: ignore
+
     return {"products": products}
 
-
+# Product By ID
 @router.get(
     "/{product_id}",
     response_model=ProductOut,
 )
-def read_product(product_id: int, db: Annotated[Session, Depends(get_db)]):
+def read_product_by_id(product_id: int, db: Annotated[Session, Depends(get_db)]):
     product = get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    product.image = encode_to_base64(product.image)  # type: ignore
+
+    image_path = product.image.lstrip("/")
+
+    if not os.path.exists(image_path):  # noqa: PTH110
+        raise HTTPException(
+            status_code=404,
+            detail=f"Error reading image: file not found at '{image_path}'"
+        )
+
+    product.image = encode_to_base64(image_path)  # type: ignore
     return product
 
 
+# Create Product
 @router.post("/create", response_model=ProductOut)
-def create_new_product(product: ProductCreate, db: Annotated[Session, Depends(get_db)]):
-    return create_product(db, product)
+async def create_products(
+    name: Annotated[str, Form()] = ..., # type: ignore
+    price: Annotated[float, Form()] = ..., # type: ignore
+    image: Annotated[UploadFile, File()] = ..., # type: ignore
+    db: Session = Depends(get_db)  # noqa: FAST002
+):
+    static_images_dir = os.path.join("static", "images")  # noqa: PTH118
+    os.makedirs(static_images_dir, exist_ok=True)  # noqa: PTH103
 
+    file_location = os.path.join(static_images_dir, image.filename)  # type: ignore # noqa: PTH118
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
 
+    # Build a URL that points to the uploaded image
+    image_url = f"/static/images/{image.filename}"
+
+    product_create = ProductCreate(name=name, price=price)
+    product = create_product(db, product_create, image_path=image_url)  # type: ignore
+    return product
+
+# Update Product
 @router.put("/update/{product_id}", response_model=ProductOut)
 def update_existing_product(
     product_id: int, product: ProductCreate, db: Annotated[Session, Depends(get_db)]
@@ -89,6 +126,7 @@ def update_existing_product(
     return db_product
 
 
+# Delete Product
 @router.delete("/delete/{product_id}")
 def delete_existing_product(product_id: int, db: Annotated[Session, Depends(get_db)]):
     db_product = delete_product(db, product_id)
