@@ -2,9 +2,10 @@ import base64
 import os
 import shutil
 import uuid
-from functools import wraps
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, cast
 
+# import magic
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -17,9 +18,14 @@ from crud.product import (
     get_products,
     update_product,
 )
-from database.db import SessionLocal, get_db
+from database.db import get_db
 from schemas.errors import Error404Response
 from schemas.product import ProductCreate, ProductList, ProductOut
+from utils.file import verify_file_size, verify_file_type
+
+MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB in bytes
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
+
 
 response = {
     404: {"description": "product not found", "model": Error404Response},
@@ -44,6 +50,7 @@ def encode_to_base64(image_path: str, image_type: str = "png") -> str:
     base64_encoded = base64.b64encode(image_data).decode("utf-8")
     return f"data:image/{image_type};base64,{base64_encoded}"
 
+
 # Product List
 @router.get(
     "/",
@@ -66,11 +73,12 @@ def read_products(
         if not os.path.exists(image_path):  # noqa: PTH110
             raise HTTPException(
                 status_code=404,
-                detail=f"Error reading image: file not found at '{image_path}'"
+                detail=f"Error reading image: file not found at '{image_path}'",
             )
         product.image = encode_to_base64(image_path)  # type: ignore
 
     return {"products": products}
+
 
 # Product By ID
 @router.get(
@@ -87,7 +95,7 @@ def read_product_by_id(product_id: int, db: Annotated[Session, Depends(get_db)])
     if not os.path.exists(image_path):  # noqa: PTH110
         raise HTTPException(
             status_code=404,
-            detail=f"Error reading image: file not found at '{image_path}'"
+            detail=f"Error reading image: file not found at '{image_path}'",
         )
 
     product.image = encode_to_base64(image_path)  # type: ignore
@@ -97,30 +105,44 @@ def read_product_by_id(product_id: int, db: Annotated[Session, Depends(get_db)])
 # Create Product
 @router.post("/create", response_model=ProductOut)
 async def create_products(
-    name: Annotated[str, Form()] = ..., # type: ignore
-    price: Annotated[float, Form()] = ..., # type: ignore
-    image: Annotated[UploadFile, File()] = ..., # type: ignore
-    db: Session = Depends(get_db)  # noqa: FAST002
+    name: Annotated[str, Form()],
+    price: Annotated[float, Form()],
+    image: Annotated[UploadFile, File()],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    static_images_dir = os.path.join("static", "images")  # noqa: PTH118
-    os.makedirs(static_images_dir, exist_ok=True)  # noqa: PTH103
+    # Validate image format
+    if not await verify_file_type(image):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Only JPEG and PNG images are allowed.",
+        )
 
-    original_filename = image.filename
-    _, file_extension = os.path.splitext(original_filename)  # type: ignore # noqa: PTH122
+    # Validate image size
+    if not await verify_file_size(image):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum allowed size is 2 MB."
+        )
+
+    static_images_dir = Path("static") / "images"
+    static_images_dir.mkdir(parents=True, exist_ok=True)
+
+    original_filename = cast(str, image.filename)
+    file_extension = Path(original_filename).suffix
+
     unique_filename = f"{uuid.uuid4()}{file_extension}"
 
-    # Save the file using the unique filename
-    file_location = os.path.join(static_images_dir, unique_filename)  # noqa: PTH118
-    with open(file_location, "wb") as buffer:  # noqa: PTH123
+    file_location = static_images_dir / unique_filename
+
+    with file_location.open("wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
 
-    # Build a URL that points to the uploaded image
     image_url = f"/static/images/{unique_filename}"
 
-    # Create product using the CRUD function; store the image URL in the database
     product_create = ProductCreate(name=name, price=price)
     product = create_product(db, product_create, image_path=image_url)
     return product
+
 
 # Update Product
 @router.put("/update/{product_id}", response_model=ProductOut)

@@ -9,6 +9,7 @@ class ProductCreate(BaseModel):
     price: float
     image: Optional[UploadFile] = File(None)
 
+
 class ProductOut(BaseModel):
     id: int
     name: str

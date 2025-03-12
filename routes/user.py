@@ -6,11 +6,9 @@ from sqlalchemy.orm import Session
 from core.security import create_access_token, verify_password
 from crud.user import create_user, get_user_by_username
 from database.db import get_db
-from models.users import User
 from schemas.user import Token, UserBase
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
-
 
 
 @router.post("/new-user", response_model=dict)
@@ -24,11 +22,10 @@ def create_new_user(user: UserBase, db: Annotated[Session, Depends(get_db)]):
     return {"message": "User registered successfully"}
 
 
-
 @router.post("/login", response_model=Token)
 def login(user: UserBase, db: Annotated[Session, Depends(get_db)]):
     db_user = get_user_by_username(db, user.username)
-    if db_user is None or not verify_password(user.password, db_user.hashed_password): # type: ignore
+    if db_user is None or not verify_password(user.password, db_user.hashed_password):  # type: ignore
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong Username or Password"
         )

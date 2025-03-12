@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-import models
 from database.db import Base, engine
 from routes import product, user
 

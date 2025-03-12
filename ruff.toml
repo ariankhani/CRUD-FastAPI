@@ -50,7 +50,7 @@ select = [
     "SIM",
     "PERF",
     ]
-ignore = ["F401","F403","E501","RUF001","RET504","C408","S311","S113","PERF102"]
+ignore = ["F403","E501","RUF001","RET504","C408","S311","S113","PERF102"]
 
 [format]
 # Like Black, use double quotes for strings.
