@@ -1,6 +1,7 @@
 import base64
 import os
 import shutil
+import uuid
 from functools import wraps
 from typing import Annotated
 
@@ -104,15 +105,21 @@ async def create_products(
     static_images_dir = os.path.join("static", "images")  # noqa: PTH118
     os.makedirs(static_images_dir, exist_ok=True)  # noqa: PTH103
 
-    file_location = os.path.join(static_images_dir, image.filename)  # type: ignore # noqa: PTH118
-    with open(file_location, "wb") as buffer:
+    original_filename = image.filename
+    _, file_extension = os.path.splitext(original_filename)  # type: ignore # noqa: PTH122
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+
+    # Save the file using the unique filename
+    file_location = os.path.join(static_images_dir, unique_filename)  # noqa: PTH118
+    with open(file_location, "wb") as buffer:  # noqa: PTH123
         shutil.copyfileobj(image.file, buffer)
 
     # Build a URL that points to the uploaded image
-    image_url = f"/static/images/{image.filename}"
+    image_url = f"/static/images/{unique_filename}"
 
+    # Create product using the CRUD function; store the image URL in the database
     product_create = ProductCreate(name=name, price=price)
-    product = create_product(db, product_create, image_path=image_url)  # type: ignore
+    product = create_product(db, product_create, image_path=image_url)
     return product
 
 # Update Product
