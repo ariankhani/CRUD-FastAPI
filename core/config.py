@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     jwt_expiration_minutes: int | None = None  # None means no expiration (infinite)
     MAX_FILE_SIZE: int = 2 * 1024 * 1024  # 2 MB in bytes
     ALLOWED_CONTENT_TYPES: set[str] = {"image/jpeg", "image/png"}
+    ALLOWED_EXTENSIONS: set[str] = {'.jpg', '.jpeg', '.png'}
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

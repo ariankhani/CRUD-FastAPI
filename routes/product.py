@@ -1,12 +1,9 @@
 import base64
 import os
-import shutil
-import uuid
-from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated
 
 # import magic
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -20,8 +17,13 @@ from crud.product import (
 )
 from database.db import get_db
 from schemas.errors import Error404Response
-from schemas.product import ProductCreate, ProductList, ProductOut
-from utils.file import verify_file_size, verify_file_type
+from schemas.product import ProductCreate, ProductCreateForm, ProductList, ProductOut
+from utils.file import (
+    save_uploaded_image,
+    verify_file_extension,
+    verify_file_size,
+    verify_file_type,
+)
 
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB in bytes
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
@@ -102,48 +104,6 @@ def read_product_by_id(product_id: int, db: Annotated[Session, Depends(get_db)])
     return product
 
 
-# Create Product
-@router.post("/create", response_model=ProductOut)
-async def create_products(
-    name: Annotated[str, Form()],
-    price: Annotated[float, Form()],
-    image: Annotated[UploadFile, File()],
-    db: Annotated[Session, Depends(get_db)],
-):
-    # Validate image format
-    if not await verify_file_type(image):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file type. Only JPEG and PNG images are allowed.",
-        )
-
-    # Validate image size
-    if not await verify_file_size(image):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File too large. Maximum allowed size is 2 MB."
-        )
-
-    static_images_dir = Path("static") / "images"
-    static_images_dir.mkdir(parents=True, exist_ok=True)
-
-    original_filename = cast(str, image.filename)
-    file_extension = Path(original_filename).suffix
-
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-
-    file_location = static_images_dir / unique_filename
-
-    with file_location.open("wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
-
-    image_url = f"/static/images/{unique_filename}"
-
-    product_create = ProductCreate(name=name, price=price)
-    product = create_product(db, product_create, image_path=image_url)
-    return product
-
-
 # Update Product
 @router.put("/update/{product_id}", response_model=ProductOut)
 def update_existing_product(
@@ -162,3 +122,38 @@ def delete_existing_product(product_id: int, db: Annotated[Session, Depends(get_
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"detail": "Product deleted"}
+
+
+
+# Create Product
+@router.post("/create", response_model=ProductOut)
+async def create_products(
+    product: Annotated[ProductCreateForm, Depends(ProductCreateForm.as_form)],
+    image: Annotated[UploadFile, File()],
+    db: Annotated[Session, Depends(get_db)],
+):
+    # Validate image format
+    if not await verify_file_type(image):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Only JPEG and PNG images are allowed.",
+        )
+
+    # Validate image size
+    if not await verify_file_size(image):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum allowed size is 2 MB."
+        )
+
+    if not await verify_file_extension(image):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. File most be .png or .jpg"
+        )
+
+    image_url = save_uploaded_image(image)
+
+    product_create = ProductCreate(name=product.name, price=product.price)
+    created_product = create_product(db, product_create, image_path=image_url)
+    return created_product

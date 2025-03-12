@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import File, UploadFile
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel
 
 
@@ -22,3 +22,16 @@ class ProductOut(BaseModel):
 
 class ProductList(BaseModel):
     products: list[ProductOut]
+
+
+class ProductCreateForm(BaseModel):
+    name: str
+    price: float
+
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        price: float = Form(...),
+    ) -> "ProductCreateForm":
+        return cls(name=name, price=price)
