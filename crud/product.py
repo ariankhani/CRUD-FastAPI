@@ -24,9 +24,12 @@ def update_product(db: Session, product_id: int, product: ProductCreate):
     db_product = get_product(db, product_id)
     if not db_product:
         return None
-    db_product.name = product.name  # type: ignore
-    db_product.price = product.price  # type: ignore
-    db_product.image = product.image  # type: ignore
+    if product.name is not None:
+        db_product.name = product.name # type: ignore
+    if product.price is not None:
+        db_product.price = product.price # type: ignore
+    if product.image is not None:
+        db_product.image = product.image # type: ignore
     db.commit()
     db.refresh(db_product)
     return db_product

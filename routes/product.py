@@ -1,6 +1,6 @@
 import base64
 import os
-from typing import Annotated
+from typing import Annotated, Optional
 
 # import magic
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -17,7 +17,13 @@ from crud.product import (
 )
 from database.db import get_db
 from schemas.errors import Error404Response
-from schemas.product import ProductCreate, ProductCreateForm, ProductList, ProductOut
+from schemas.product import (
+    ProductCreate,
+    ProductCreateForm,
+    ProductList,
+    ProductOut,
+    ProductUpdateForm,
+)
 from utils.file import (
     save_uploaded_image,
     verify_file_extension,
@@ -106,12 +112,47 @@ def read_product_by_id(product_id: int, db: Annotated[Session, Depends(get_db)])
 
 # Update Product
 @router.put("/update/{product_id}", response_model=ProductOut)
-def update_existing_product(
-    product_id: int, product: ProductCreate, db: Annotated[Session, Depends(get_db)]
+async def update_existing_product(
+    product_id: int,
+    product: Annotated[ProductUpdateForm, Depends(ProductUpdateForm.as_form)],
+    db: Annotated[Session, Depends(get_db)],
+    image: Annotated[Optional[UploadFile], File()] = None
 ):
-    db_product = update_product(db, product_id, product)
+    # Retrieve the existing product
+    db_product = get_product(db, product_id)
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    # Update the product fields from the form data
+    db_product.name = product.name # type: ignore
+    db_product.price = product.price # type: ignore
+
+    # If a new image file is provided, validate and save it
+    if image:
+        # Validate image format
+        if not await verify_file_type(image):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. Only JPEG and PNG images are allowed.",
+            )
+
+        # Validate image size
+        if not await verify_file_size(image):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File too large. Maximum allowed size is 2 MB."
+            )
+
+        if not await verify_file_extension(image):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. File most be .png or .jpg"
+            )
+        image_url = save_uploaded_image(image)
+        db_product.image = image_url # type: ignore
+
+    db.commit()
+    db.refresh(db_product)
     return db_product
 
 

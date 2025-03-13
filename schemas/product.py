@@ -35,3 +35,15 @@ class ProductCreateForm(BaseModel):
         price: float = Form(...),
     ) -> "ProductCreateForm":
         return cls(name=name, price=price)
+
+class ProductUpdateForm(BaseModel):
+    name: str
+    price: float
+
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        price: float = Form(...),
+    ) -> "ProductUpdateForm":
+        return cls(name=name, price=price)
