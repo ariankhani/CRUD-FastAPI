@@ -5,7 +5,7 @@ from pathlib import Path
 import magic
 from fastapi import HTTPException, UploadFile, status
 
-from core.config import settings
+from app.core.config import settings
 
 
 async def verify_file_type(file: UploadFile) -> bool:

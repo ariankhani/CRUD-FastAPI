@@ -1,0 +1,19 @@
+version: '3.4'
+
+services:
+  uniproj:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["./startup.sh"]
+    ports:
+      - ${APP_PORT:-8000}:8000
+    environment:
+      - FLASK_APP=app.py
+    volumes:
+      - .:/app
+    networks:
+      - scheduler_network
+networks:
+  scheduler_network:
+    driver: bridge

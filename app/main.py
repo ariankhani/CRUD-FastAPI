@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from database.db import Base, engine
-from routes import product, user
+from app.database.db import Base, engine
+from app.routes import product, user
 
 app = FastAPI()
 

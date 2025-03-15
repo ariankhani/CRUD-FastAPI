@@ -7,24 +7,23 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from core.dependencies import get_current_user
-from crud.product import (
+from app.core.dependencies import get_current_user
+from app.crud.product import (
     create_product,
     delete_product,
     get_product,
     get_products,
-    update_product,
 )
-from database.db import get_db
-from schemas.errors import Error404Response
-from schemas.product import (
+from app.database.db import get_db
+from app.schemas.errors import Error404Response
+from app.schemas.product import (
     ProductCreate,
     ProductCreateForm,
     ProductList,
     ProductOut,
     ProductUpdateForm,
 )
-from utils.file import (
+from app.utils.file import (
     save_uploaded_image,
     verify_file_extension,
     verify_file_size,

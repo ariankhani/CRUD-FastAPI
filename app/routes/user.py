@@ -3,10 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from core.security import create_access_token, verify_password
-from crud.user import create_user, get_user_by_username
-from database.db import get_db
-from schemas.user import Token, UserBase
+from app.core.security import create_access_token, verify_password
+from app.crud.user import create_user, get_user_by_username
+from app.database.db import get_db
+from app.schemas.user import Token, UserBase
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
