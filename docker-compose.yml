@@ -1,19 +1,11 @@
-version: '3.4'
+version: "3.8"
 
 services:
-  uniproj:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    command: ["./startup.sh"]
+  web:
+    build: .
     ports:
-      - ${APP_PORT:-8000}:8000
-    environment:
-      - FLASK_APP=app.py
+      - "8000:8000"
     volumes:
-      - .:/app
-    networks:
-      - scheduler_network
-networks:
-  scheduler_network:
-    driver: bridge
+      - .:/app  # Mount the project directory for live reload in development
+    environment:
+      - ENV=development
