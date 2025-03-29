@@ -9,3 +9,6 @@ services:
       - .:/app  # Mount the project directory for live reload in development
     environment:
       - ENV=development
+    env_file:
+      - ${ENV_FILE:-.env}
+    user: "${UID}:${GID}"
