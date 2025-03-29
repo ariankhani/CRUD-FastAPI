@@ -4,11 +4,9 @@ services:
   web:
     build: .
     ports:
-      - "8000:8000"
-    volumes:
-      - .:/app  # Mount the project directory for live reload in development
+      - "${APP_PORT:-80}:8000"
     environment:
       - ENV=development
     env_file:
       - ${ENV_FILE:-.env}
-    user: "${UID}:${GID}"
+    # user: "${UID}:${GID}"
