@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.database.db import Base, engine
-from app.routes import product, user
+from app.routes import orders, product, user
 
 app = FastAPI()
 
@@ -14,3 +14,4 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Include the products router
 app.include_router(product.router)
 app.include_router(user.router)
+app.include_router(orders.router)
