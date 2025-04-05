@@ -166,7 +166,7 @@ def delete_existing_product(product_id: int, db: Annotated[Session, Depends(get_
 
 
 # Create Product
-@router.post("/create", response_model=ProductOut)
+@router.post("/create", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 async def create_products(
     product: Annotated[ProductCreateForm, Depends(ProductCreateForm.as_form)],
     image: Annotated[UploadFile, File()],
