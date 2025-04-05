@@ -12,4 +12,4 @@ class Product(Base):
     price = Column(Float, nullable=False)
     image = Column(String, index=True)
 
-    order_items = relationship("OrderItem", back_populates="product")  # Link back to OrderItem
+    order_items = relationship("OrderItem", back_populates="product")
