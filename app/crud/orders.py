@@ -1,7 +1,4 @@
-# def get_order(db: Session, order_id: int):
-#     return db.query(Order).filter(Order.id == order_id).first()
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from app.models.orders import Order, OrderItem
 from app.models.product import Product
