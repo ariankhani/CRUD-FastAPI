@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.core.security import (
     create_access_token,
-    validate_password_complexity,
     verify_password,
 )
 from app.crud.user import create_user, get_user_by_username
@@ -24,10 +23,6 @@ async def create_new_user(user: UserBase, db: Annotated[Session, Depends(get_db)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
-
-    # Validate password complexity; this is a fast, CPU-bound check so calling it directly is acceptable
-    validate_password_complexity(user.password)
-
     # Create the user in the database through a thread pool (since it's a synchronous operation)
     await run_in_threadpool(create_user, db, user.username, user.password)
 
@@ -45,7 +40,9 @@ async def login(user: UserBase, db: Annotated[Session, Depends(get_db)]):
 
     # Verify the password (using a threadpool to offload blocking call)
     password_valid = await run_in_threadpool(
-        verify_password, user.password, db_user.hashed_password # type: ignore
+        verify_password,
+        user.password,
+        db_user.hashed_password,  # type: ignore
     )
     if not password_valid:
         raise HTTPException(
