@@ -27,5 +27,5 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include the routers
 app.include_router(product.router)
-app.include_router(user.router)
 app.include_router(orders.router)
+app.include_router(user.router)

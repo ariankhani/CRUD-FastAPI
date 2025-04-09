@@ -2,8 +2,9 @@ import base64
 import os
 from typing import Annotated, Optional
 
-# import magic
+import aiofiles
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -33,24 +34,22 @@ from app.utils.file import (
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB in bytes
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 
-
 response = {
     404: {"description": "product not found", "model": Error404Response},
     302: {"description": "The product was moved"},
     403: {"description": "Not enough privileges"},
 }
 
-
 router = APIRouter(
     prefix="/products", tags=["products"], dependencies=[Depends(get_current_user)]
 )
 
 
-def encode_to_base64(image_path: str, image_type: str = "png") -> str:
-    # Check if the file exists
+async def encode_to_base64(image_path: str, image_type: str = "png") -> str:
+    """Read an image asynchronously and convert it to a base64 encoded data URI."""
     try:
-        with open(image_path, "rb") as image_file:  # noqa: PTH123
-            image_data = image_file.read()
+        async with aiofiles.open(image_path, "rb") as image_file:
+            image_data = await image_file.read()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading image: {e}")
 
@@ -67,22 +66,25 @@ def encode_to_base64(image_path: str, image_type: str = "png") -> str:
         404: {"detail": "No product exist"},
     },
 )
-def read_products(
+async def read_products(
     db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 10
 ):
-    products = get_products(db, skip=skip, limit=limit)
+    products = await run_in_threadpool(get_products, db, skip, limit)
     if not products:
         return JSONResponse(status_code=404, content={"detail": "No product found"})
 
+    # Process each product: check file existence and encode image asynchronously.
     for product in products:
         image_path = product.image.lstrip("/")
-
-        if not os.path.exists(image_path):  # noqa: PTH110
+        # Use run_in_threadpool to avoid blocking the event loop
+        exists = await run_in_threadpool(os.path.exists, image_path)
+        if not exists:
             raise HTTPException(
                 status_code=404,
                 detail=f"Error reading image: file not found at '{image_path}'",
             )
-        product.image = encode_to_base64(image_path)  # type: ignore
+        # Encode the image asynchronously
+        product.image = await encode_to_base64(image_path) # type: ignore
 
     return {"products": products}
 
@@ -92,20 +94,21 @@ def read_products(
     "/{product_id}",
     response_model=ProductOut,
 )
-def read_product_by_id(product_id: int, db: Annotated[Session, Depends(get_db)]):
-    product = get_product(db, product_id)
+async def read_product_by_id(
+    product_id: int, db: Annotated[Session, Depends(get_db)]
+):
+    product = await run_in_threadpool(get_product, db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     image_path = product.image.lstrip("/")
-
-    if not os.path.exists(image_path):  # noqa: PTH110
+    exists = await run_in_threadpool(os.path.exists, image_path)
+    if not exists:
         raise HTTPException(
             status_code=404,
             detail=f"Error reading image: file not found at '{image_path}'",
         )
-
-    product.image = encode_to_base64(image_path)  # type: ignore
+    product.image = await encode_to_base64(image_path) # type: ignore
     return product
 
 
@@ -117,25 +120,23 @@ async def update_existing_product(
     db: Annotated[Session, Depends(get_db)],
     image: Annotated[Optional[UploadFile], File()] = None
 ):
-    # Retrieve the existing product
-    db_product = get_product(db, product_id)
+    # Retrieve the existing product in a threadpool call
+    db_product = await run_in_threadpool(get_product, db, product_id)
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Update the product fields from the form data
-    db_product.name = product.name # type: ignore
-    db_product.price = product.price # type: ignore
+    # Update product fields from form data
+    db_product.name = product.name  # type: ignore
+    db_product.price = product.price  # type: ignore
 
-    # If a new image file is provided, validate and save it
+    # If a new image file is provided, validate and save it asynchronously
     if image:
-        # Validate image format
         if not await verify_file_type(image):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid file type. Only JPEG and PNG images are allowed.",
             )
 
-        # Validate image size
         if not await verify_file_size(image):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -145,24 +146,25 @@ async def update_existing_product(
         if not await verify_file_extension(image):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid file type. File most be .png or .jpg"
+                detail="Invalid file type. File must be .png or .jpg."
             )
         image_url = save_uploaded_image(image)
-        db_product.image = image_url # type: ignore
+        db_product.image = image_url  # type: ignore
 
-    db.commit()
-    db.refresh(db_product)
+    await run_in_threadpool(db.commit)
+    await run_in_threadpool(db.refresh, db_product)
     return db_product
 
 
 # Delete Product
 @router.delete("/delete/{product_id}")
-def delete_existing_product(product_id: int, db: Annotated[Session, Depends(get_db)]):
-    db_product = delete_product(db, product_id)
+async def delete_existing_product(
+    product_id: int, db: Annotated[Session, Depends(get_db)]
+):
+    db_product = await run_in_threadpool(delete_product, db, product_id)
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"detail": "Product deleted"}
-
 
 
 # Create Product
@@ -172,14 +174,12 @@ async def create_products(
     image: Annotated[UploadFile, File()],
     db: Annotated[Session, Depends(get_db)],
 ):
-    # Validate image format
     if not await verify_file_type(image):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid file type. Only JPEG and PNG images are allowed.",
         )
 
-    # Validate image size
     if not await verify_file_size(image):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -189,11 +189,10 @@ async def create_products(
     if not await verify_file_extension(image):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file type. File most be .png or .jpg"
+            detail="Invalid file type. File must be .png or .jpg."
         )
 
     image_url = save_uploaded_image(image)
-
     product_create = ProductCreate(name=product.name, price=product.price)
-    created_product = create_product(db, product_create, image_path=image_url)
+    created_product = await run_in_threadpool(create_product, db, product_create, image_path=image_url)
     return created_product
