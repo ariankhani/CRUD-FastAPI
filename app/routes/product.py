@@ -68,11 +68,11 @@ def encode_to_base64(image_path: str, image_type: str = "png") -> str:
     },
 )
 def read_products(
-    db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 10
+    db: Annotated[Session, Depends(get_db)]
 ):
-    products = get_products(db, skip=skip, limit=limit)
-    if not products:
-        return JSONResponse(status_code=404, content={"detail": "No product found"})
+    products = get_products(db)
+    if products:
+        return JSONResponse(content={"detail": "No product found"})
 
     for product in products:
         image_path = product.image.lstrip("/")

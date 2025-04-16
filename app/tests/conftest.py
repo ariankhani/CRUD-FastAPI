@@ -1,3 +1,4 @@
+import base64
 import io
 
 import pytest
@@ -72,7 +73,7 @@ def auth_token(test_client, test_user):
 
 # Monkey-patch the image validation functions to always return True
 @pytest.fixture(autouse=True)
-def override_image_validations(monkeypatch):
+def override_image_validations(monkeypatch: pytest.MonkeyPatch):
     async def always_true(*args, **kwargs):
         return True
 
@@ -87,17 +88,22 @@ def created_item(test_client, auth_token):
     headers: dict[str, str] = {"Authorization": f"Bearer {auth_token}"}
     # Form fields for product creation
     data: dict[str, str] = {"name": "test_item", "price": "10.0"}
-    # Supply a dummy (empty) file since image is required by the route.
-    dummy_file = io.BytesIO(b"")
-    dummy_file.name = "dummy.jpg"
-    files = {"image": ("dummy.jpg", dummy_file, "image/jpeg")}
-    # Ensure correct URL prefix (assuming your router is mounted with /products)
+    # Minimal valid 1x1 pixel black GIF (43 bytes)
+    gif_base64 = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+    gif_data = base64.b64decode(gif_base64)
+    dummy_file = io.BytesIO(gif_data)
+    dummy_file.name = "dummy.gif"
+    
+    files = {"image": (dummy_file.name, dummy_file, "image/gif")}
+
     response = test_client.post(
-        "/products/create", data=data, files=files, headers=headers
+        "/products/create",
+        data=data,
+        files=files,
+        headers=headers
     )
+    
     assert response.status_code == 201, (
-        f"Unexpected status code: {response.status_code}"
+        f"Failed to create item. Response: {response.json()}"
     )
-    item_id = response.json().get("id")
-    assert item_id is not None, "Created item should have an id"
-    return item_id
+    return response.json()["id"]
