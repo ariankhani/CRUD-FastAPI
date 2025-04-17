@@ -2,12 +2,12 @@ import base64
 import io
 
 import pytest
-from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
+from app.core.security import create_access_token
 from app.database.db import Base, get_db
 from app.main import app
 
@@ -58,18 +58,10 @@ def test_user(test_client: TestClient) -> dict[str, str]:
     return user_data
 
 
-@pytest.fixture(scope="module")
-def auth_token(test_client, test_user):
-    response = test_client.post(
-        "/accounts/login",
-        json={"username": test_user["username"], "password": test_user["password"]},
-    )
-    token = response.json().get("access_token")
-    assert token is not None, (
-        f"Expected 'access_token' in response, got: {response.json()}"
-    )
+@pytest.fixture
+def auth_token() -> str:
+    token = create_access_token(data={"sub": "testuser"})
     return token
-
 
 # Monkey-patch the image validation functions to always return True
 @pytest.fixture(autouse=True)

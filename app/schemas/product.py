@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import File, Form, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ProductCreate(BaseModel):
@@ -16,8 +16,7 @@ class ProductOut(BaseModel):
     price: float
     image: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductList(BaseModel):
