@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Univercity Scheduler"
+    app_name: str = "Fast API Shop"
     database_url: str = "sqlite:///./shop.db"
     jwt_secret: str = "aae#g$1y7mb-i#4xrtc^p5zs9!056382u**7nl9i*_o#by9&lv"  # noqa: S105
     jwt_algorithm: str = "HS256"

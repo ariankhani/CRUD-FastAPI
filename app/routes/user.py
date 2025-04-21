@@ -11,7 +11,7 @@ from app.schemas.user import Token, UserBase
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
 
-@router.post("/new-user", response_model=dict)
+@router.post("/new-user", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_new_user(user: UserBase, db: Annotated[Session, Depends(get_db)]):
     existing_user = get_user_by_username(db, user.username)
     if existing_user:

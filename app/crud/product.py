@@ -4,7 +4,7 @@ from app.models.product import Product
 from app.schemas.product import ProductCreate
 
 
-def get_product(db: Session, product_id: int):
+def get_product(db: Session, product_id: int) -> Product | None:
     return db.query(Product).filter(Product.id == product_id).first()
 
 

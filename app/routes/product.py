@@ -68,11 +68,17 @@ def encode_to_base64(image_path: str, image_type: str = "png") -> str:
     },
 )
 def read_products(
-    db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 10
+    db: Annotated[Session, Depends(get_db)]
 ):
     products = get_products(db)
+<<<<<<< HEAD
     if not products:
         return {"products": []} #TODO: show empty dict
+=======
+    if products:
+        return JSONResponse(content={"detail": "No product found"})
+
+>>>>>>> feature/tests
     for product in products:
         image_path = product.image.lstrip("/")
 
@@ -165,7 +171,7 @@ def delete_existing_product(product_id: int, db: Annotated[Session, Depends(get_
 
 
 # Create Product
-@router.post("/create", response_model=ProductOut)
+@router.post("/create", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 async def create_products(
     product: Annotated[ProductCreateForm, Depends(ProductCreateForm.as_form)],
     image: Annotated[UploadFile, File()],
