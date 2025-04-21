@@ -26,4 +26,4 @@ EXPOSE 8000
 
 # Run the application using uvicorn.
 # Adjust the module path according to your project structure.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
