@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./shop.db"
     jwt_secret: str = "aae#g$1y7mb-i#4xrtc^p5zs9!056382u**7nl9i*_o#by9&lv"  # noqa: S105
     jwt_algorithm: str = "HS256"
-    jwt_expiration_minutes: int | None = None  # None means no expiration (infinite)
+    jwt_expiration_minutes: int | None = 10  # None means no expiration (infinite)
     MAX_FILE_SIZE: int = 2 * 1024 * 1024  # 2 MB in bytes
     ALLOWED_CONTENT_TYPES: set[str] = {"image/jpeg", "image/png"}
     ALLOWED_EXTENSIONS: set[str] = {'.jpg', '.jpeg', '.png'}

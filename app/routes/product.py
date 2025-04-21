@@ -70,16 +70,15 @@ def encode_to_base64(image_path: str, image_type: str = "png") -> str:
 def read_products(
     db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 10
 ):
-    products = get_products(db, skip=skip, limit=limit)
+    products = get_products(db)
     if not products:
-        return JSONResponse(status_code=404, content={"detail": "No product found"})
-
+        return {"products": []} #TODO: show empty dict
     for product in products:
         image_path = product.image.lstrip("/")
 
         if not os.path.exists(image_path):  # noqa: PTH110
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Error reading image: file not found at '{image_path}'",
             )
         product.image = encode_to_base64(image_path)  # type: ignore
