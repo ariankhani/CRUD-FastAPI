@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# def get_order(db: Session, order_id: int):
-#     return db.query(Order).filter(Order.id == order_id).first()
-=======
->>>>>>> origin/main
 from sqlalchemy.orm import Session
 
 from app.models.orders import Order, OrderItem

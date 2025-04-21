@@ -5,7 +5,6 @@ from typing import Annotated, Optional
 import aiofiles
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
@@ -66,29 +65,14 @@ async def encode_to_base64(image_path: str, image_type: str = "png") -> str:
         404: {"detail": "No product exist"},
     },
 )
-<<<<<<< HEAD
-def read_products(
+async def read_products(
     db: Annotated[Session, Depends(get_db)]
 ):
-    products = get_products(db)
-<<<<<<< HEAD
-=======
-async def read_products(
-    db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 10
-):
-    products = await run_in_threadpool(get_products, db, skip, limit)
->>>>>>> origin/main
+    products = await run_in_threadpool(get_products, db)
     if not products:
         return {"products": []} #TODO: show empty dict
-=======
-    if products:
-        return JSONResponse(content={"detail": "No product found"})
 
-<<<<<<< HEAD
->>>>>>> feature/tests
-=======
     # Process each product: check file existence and encode image asynchronously.
->>>>>>> origin/main
     for product in products:
         image_path = product.image.lstrip("/")
         # Use run_in_threadpool to avoid blocking the event loop

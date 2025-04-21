@@ -15,16 +15,10 @@ from app.schemas.user import Token, UserBase
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
 
-<<<<<<< HEAD
-@router.post("/new-user", response_model=dict, status_code=status.HTTP_201_CREATED)
-def create_new_user(user: UserBase, db: Annotated[Session, Depends(get_db)]):
-    existing_user = get_user_by_username(db, user.username)
-=======
 @router.post("/new-user", response_model=dict)
 async def create_new_user(user: UserBase, db: Annotated[Session, Depends(get_db)]):
     # Check if a user already exists using run_in_threadpool since it's a synchronous DB call
     existing_user = await run_in_threadpool(get_user_by_username, db, user.username)
->>>>>>> origin/main
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"

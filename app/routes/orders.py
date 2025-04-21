@@ -1,10 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-<<<<<<< HEAD
-=======
 from fastapi.concurrency import run_in_threadpool
->>>>>>> origin/main
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
@@ -28,15 +25,10 @@ async def create_order_api(
     response_model=OrderResponse,
     responses={404: {"detail": "Order not found"}},
 )
-<<<<<<< HEAD
-def read_order(order_id: int, db: Annotated[Session, Depends(get_db)], current_user: dict = Depends(get_current_user)):
-    order = get_order(db, order_id)
-=======
 async def read_order(
     order_id: int, db: Annotated[Session, Depends(get_db)]
 ):
     order = await run_in_threadpool(get_order, db, order_id)
->>>>>>> origin/main
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 

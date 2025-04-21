@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-from pydantic import BaseModel, ConfigDict
-=======
 from typing import List
 
 from pydantic import BaseModel, Field, field_validator
->>>>>>> origin/main
 
 
 class UserBase(BaseModel):
@@ -34,13 +30,3 @@ class UserBase(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
-<<<<<<< HEAD
-
-
-class UserResponse(BaseModel):
-    id: int
-    username: str
-    password: str
-    model_config = ConfigDict(from_attributes=True)
-=======
->>>>>>> origin/main
