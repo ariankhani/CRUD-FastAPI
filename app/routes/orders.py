@@ -4,18 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
-from app.crud.orders import create_order, get_order
+from app.crud.orders import create_order, delete_order, get_order
 from app.database.db import get_db
 from app.schemas.order import OrderCreate, OrderResponse
 
 router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depends(get_current_user)])
 
-
+# Order Create
 @router.post("/create/", response_model=OrderResponse)
 def create_order_api(order: OrderCreate, db: Annotated[Session, Depends(get_db)]):
     return create_order(db, order)
 
-
+# Order Read
 @router.get(
     "/{order_id}",
     response_model=OrderResponse,
@@ -23,24 +23,16 @@ def create_order_api(order: OrderCreate, db: Annotated[Session, Depends(get_db)]
         404: {"detail": "Order not found"},
     },
 )
-def read_order(order_id: int, db: Annotated[Session, Depends(get_db)], current_user: dict = Depends(get_current_user)):
+async def read_order(order_id: int, db: Annotated[Session, Depends(get_db)], current_user: dict = Depends(get_current_user)):
     order = get_order(db, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    order_data = {
-        "id": order.id,
-        "user_id": order.user_id,
-        "items": [
-            {
-                "quantity": item.quantity,
-                "product": {
-                    "id": item.product.id,
-                    "name": item.product.name,
-                    "price": item.product.price,
-                },
-            }
-            for item in order.items
-            if item.product is not None  # Ensure product exists
-        ],
-    }
-    return order_data
+    return order
+
+# Order Delete
+@router.delete("/delete/{order_id}")
+async def order_delete(order_id: int, db: Annotated[Session, Depends(get_db)], current_user: dict = Depends(get_current_user)):
+    order = delete_order(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"detail": "Order deleted"}

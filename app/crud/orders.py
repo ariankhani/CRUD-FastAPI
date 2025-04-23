@@ -45,3 +45,19 @@ def create_order(db: Session, order_data: OrderCreate) -> OrderResponse:
     db.commit()
 
     return OrderResponse(id=new_order.id, user_id=new_order.user_id, items=order_items)  # type: ignore
+
+
+async def update_order(db: Session, order_id: int, order: OrderCreate):
+    order_update = get_order(db, order_id)
+    if not order_update:
+        return None
+
+
+
+def delete_order(db: Session, order_id: int) -> OrderResponse | None:
+    order = get_order(db, order_id)
+    if order:
+        db.delete(order)
+        db.commit()
+        return order
+    return None
