@@ -127,7 +127,7 @@ async def read_product_by_id(
 @router.put("/update/{product_id}", response_model=ProductOut)
 async def update_existing_product(
     product_id: int,
-    product: Annotated[ProductUpdateForm, Depends(ProductUpdateForm.as_form)],
+    product_payload: Annotated[ProductUpdateForm, Depends(ProductUpdateForm.as_form)],
     db: Annotated[Session, Depends(get_db)],
     image: Annotated[Optional[UploadFile], File()] = None
 ):
@@ -139,8 +139,8 @@ async def update_existing_product(
             raise HTTPException(status_code=404, detail="Product not found")
 
         # Update product fields from form data
-        product.name = product.name  # type: ignore
-        product.price = product.price  # type: ignore
+        product.name = product_payload.name
+        product.price = product_payload.price
 
         # If a new image file is provided, validate and save it asynchronously
         if image:
