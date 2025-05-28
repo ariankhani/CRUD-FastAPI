@@ -1,0 +1,33 @@
+[project]
+name = "fast-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiofiles==24.1.0",
+    "fastapi==0.115.12",
+    "passlib==1.7.4",
+    "pydantic-settings==2.8.1",
+    "pyjwt==2.10.1",
+    "python-magic==0.4.27",
+    "python-multipart==0.0.20",
+    "sqlalchemy==2.0.40",
+    "uvicorn==0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "aiofiles==24.1.0",
+    "fastapi==0.115.12",
+    "httpx==0.28.1",
+    "passlib==1.7.4",
+    "pydantic-settings==2.8.1",
+    "pyjwt==2.10.1",
+    "pytest==8.3.5",
+    "python-magic==0.4.27",
+    "python-multipart==0.0.20",
+    "ruff>=0.11.11",
+    "sqlalchemy==2.0.40",
+    "uvicorn==0.34.0",
+]
