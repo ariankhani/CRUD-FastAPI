@@ -17,10 +17,11 @@ def create_order(db: Session, order_data: OrderCreate) -> OrderResponse:
     # Create the order
     new_order = Order(user_id=order_data.user_id)
     db.add(new_order)
-    db.commit()
-    db.refresh(new_order)
+    # db.commit()
+    # db.refresh(new_order)
 
     order_items = []
+    
 
     for item in order_data.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
@@ -39,8 +40,8 @@ def create_order(db: Session, order_data: OrderCreate) -> OrderResponse:
                 quantity=item.quantity,
             )
         )
-
     db.commit()
+    db.refresh(new_order)
 
     return OrderResponse(id=new_order.id, user_id=new_order.user_id, items=order_items)  # type: ignore
 

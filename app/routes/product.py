@@ -33,8 +33,6 @@ from app.utils.file import (
     verify_file_type,
 )
 
-MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB in bytes
-ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 
 response = {
     404: {"description": "product not found", "model": Error404Response},
@@ -139,8 +137,8 @@ async def update_existing_product(
             raise HTTPException(status_code=404, detail="Product not found")
 
         # Update product fields from form data
-        product.name = product_payload.name
-        product.price = product_payload.price
+        product.name = product_payload.name # type: ignore
+        product.price = product_payload.price # type: ignore
 
         # If a new image file is provided, validate and save it asynchronously
         if image:
