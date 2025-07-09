@@ -71,11 +71,14 @@ source = { virtual = "." }
 dependencies = [
     { name = "aiofiles" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "passlib" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
+    { name = "pytest" },
     { name = "python-magic" },
     { name = "python-multipart" },
+    { name = "ruff" },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
 ]
@@ -101,11 +104,14 @@ dev = [
 requires-dist = [
     { name = "aiofiles", specifier = "==24.1.0" },
     { name = "fastapi", specifier = "==0.115.12" },
+    { name = "httpx", specifier = "==0.28.1" },
     { name = "passlib", specifier = "==1.7.4" },
     { name = "pydantic-settings", specifier = "==2.8.1" },
     { name = "pyjwt", specifier = "==2.10.1" },
+    { name = "pytest", specifier = "==8.3.5" },
     { name = "python-magic", specifier = "==0.4.27" },
     { name = "python-multipart", specifier = "==0.0.20" },
+    { name = "ruff", specifier = ">=0.11.11" },
     { name = "sqlalchemy", specifier = "==2.0.40" },
     { name = "uvicorn", specifier = "==0.34.0" },
 ]
