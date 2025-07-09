@@ -1,11 +1,15 @@
+version: '3.8'
 
 services:
-  fast-api-shop:
-    build: .
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "${APP_PORT:-80}:8000"
-    environment:
-      - ENV=production
-    env_file:
-      - ${ENV_FILE:-.env}
-    # user: "${UID}:${GID}"
+      - "8000:8000"
+    volumes:
+      # Mount the entire project directory to the container
+      # This allows for hot-reloading when you change code
+      - ./:/app
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"

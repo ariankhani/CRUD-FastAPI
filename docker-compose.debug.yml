@@ -1,15 +1,15 @@
-version: '3.4'
+version: '3.8'
 
 services:
-  fast-api-shop:
+  app:
     build:
       context: .
-      dockerfile: ./Dockerfile.debug
-    command: ["./startup.sh"]
+      dockerfile: Dockerfile
     ports:
-      - ${APP_PORT:-8000}:8000
-    environment:
-      - FLASK_APP=app.py
-    env_file:
-      - ${ENV_FILE:-.env}
-    user: "${UID}:${GID}"
+      - "8000:8000"
+    volumes:
+      # Mount the entire project directory to the container
+      # This allows for hot-reloading when you change code
+      - ./:/app
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
