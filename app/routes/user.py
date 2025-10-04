@@ -11,7 +11,7 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.crud.user import create_user, get_user_by_username, update_user_jti
+from app.crud.user import create_user, get_user_by_username, rotate_jti_if_matches, update_user_jti
 from app.database.db import get_db
 from app.schemas.user import RefreshTokenRequest, Token, UserBase
 
@@ -136,3 +136,39 @@ async def refresh_access_token(
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
     }
+
+
+@router.get("/current_user", response_model=dict)
+async def who_am_i(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_user)],
+):
+    username = current_user["sub"]
+    db_user = await run_in_threadpool(get_user_by_username, db, username)
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {"id": db_user.id, "username": db_user.username}
+
+@router.post("/logout", response_model=dict)
+async def logout(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_user)],
+):
+    """
+    Logs out the *current* session by rotating the user's JTI
+    only if the presented access token's JTI matches what's in DB.
+    """
+    username = current_user.get("sub")
+    token_jti = current_user.get("jti")
+    if not username or not token_jti:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    ok = await run_in_threadpool(
+        rotate_jti_if_matches, db, username=username, expected_jti=token_jti
+    )
+    if not ok:
+        # Either already logged out (jti mismatch) or user missing.
+        # Use 401 so clients know to re-auth.
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session not active")
+
+    return {"message": "Logged out successfully"}

@@ -1,6 +1,9 @@
+from typing import Optional, Tuple
 import uuid
 
 from sqlalchemy.orm import Session
+import jwt
+from jwt import InvalidTokenError, ExpiredSignatureError
 
 from app.core.security import hash_password
 from app.models.users import User
@@ -17,6 +20,10 @@ def create_user(db: Session, username: str, password: str) -> User:
 
 def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
+
+
+def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+    return db.query(User).filter(User.id == user_id).first()
 
 
 def update_user_jti(db: Session, username: str) -> str:
@@ -41,3 +48,19 @@ def update_user_jti(db: Session, username: str) -> str:
     
     # Step 5: Return the new ID so it can be used to create the new tokens.
     return new_jti
+
+
+def rotate_jti_if_matches(db: Session, *, username: str, expected_jti: str) -> bool:
+    """
+    Logout helper: rotate user's JTI **only if** current DB JTI equals `expected_jti`.
+    Returns True if rotated (logged out), False otherwise.
+    """
+    user = get_user_by_username(db, username)
+    if not user:
+        return False
+    if getattr(user, "jti", None) != expected_jti:
+        # token already revoked / mismatch -> treat as not logged in
+        return False
+    user.jti = str(uuid.uuid4())  # type: ignore[attr-defined]
+    db.commit()
+    return True
