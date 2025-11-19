@@ -7,3 +7,5 @@ pydantic_settings==2.8.1
 python_magic==0.4.27
 python_multipart==0.0.20
 aiofiles==24.1.0
+argon2-cffi
+bcrypt

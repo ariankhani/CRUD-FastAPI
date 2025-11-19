@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
 from app.core.security import create_access_token
+from app.crud.user import create_user, get_user_by_username, update_user_jti
 from app.database.db import Base, get_db
 from app.main import app
 
@@ -60,7 +61,20 @@ def test_user(test_client: TestClient) -> dict[str, str]:
 
 @pytest.fixture
 def auth_token() -> str:
-    token = create_access_token(data={"sub": "testuser"})
+    # Ensure the test user exists and has a JTI stored in the database so the
+    # generated token will match the DB and be accepted by auth deps.
+    db = TestingSessionLocal()
+    try:
+        user = get_user_by_username(db, "testuser")
+        if not user:
+            # create a lightweight test user directly in DB
+            create_user(db, "testuser", "testpass")
+
+        jti = update_user_jti(db, "testuser")
+    finally:
+        db.close()
+
+    token = create_access_token(data={"sub": "testuser"}, jti=jti)
     return token
 
 # Monkey-patch the image validation functions to always return True

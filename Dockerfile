@@ -13,7 +13,7 @@ WORKDIR /app
 
 # Copy and install dependencies
 COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Create a static folder (if you need to serve static files)
 RUN mkdir -p static

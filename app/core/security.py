@@ -22,42 +22,37 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 # --- START OF CHANGES ---
 
-def create_access_token(data: dict, jti: str) -> str:
-    """
-    Creates a new JWT access token.
-    Accepts a 'jti' and includes it in the token payload.
-    """
+def create_access_token(data: dict, jti: str | None = None) -> str:
+    """Create a JWT access token. If `jti` is not provided, generate one."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.jwt_expiration_minutes or 15
-    )
-    # Add all required claims to the payload
-    to_encode.update(
-        {
-            "exp": expire,
-            "jti": jti,  # <-- Add the JTI here
-            "type": "access",
-        }
-    )
+
+    # Ensure a JTI exists for revocation/rotation
+    if not jti:
+        jti = str(uuid.uuid4())
+
+    # Add expiry if configured (None means no expiry)
+    if settings.jwt_expiration_minutes is not None:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expiration_minutes)
+        to_encode["exp"] = expire
+
+    to_encode.update({"jti": jti, "type": "access"})
+
     return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
-def create_refresh_token(data: dict, jti: str) -> str:
-    """
-    Creates a new JWT refresh token.
-    Accepts a 'jti' and includes it in the token payload.
-    """
+def create_refresh_token(data: dict, jti: str | None = None) -> str:
+    """Create a JWT refresh token. If `jti` is not provided, generate one."""
     to_encode = data.copy()
-    # Refresh tokens typically have a longer expiry time
-    expire = datetime.now(timezone.utc) + timedelta(days=7)
-    # Add all required claims to the payload
-    to_encode.update(
-        {
-            "exp": expire,
-            "jti": jti,  # <-- Add the JTI here
-            "type": "refresh",
-        }
-    )
+
+    if not jti:
+        jti = str(uuid.uuid4())
+
+    # Use configured refresh expiration (minutes) if set
+    if settings.jwt_refresh_expiration_minutes is not None:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_refresh_expiration_minutes)
+        to_encode["exp"] = expire
+
+    to_encode.update({"jti": jti, "type": "refresh"})
     return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
