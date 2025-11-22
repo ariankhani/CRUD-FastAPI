@@ -4,14 +4,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user, get_user_from_refresh_token
+from app.core.dependencies import get_current_user
 from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
     verify_password,
 )
-from app.crud.user import create_user, get_user_by_username, rotate_jti_if_matches, update_user_jti
+from app.crud.user import (
+    create_user,
+    get_user_by_username,
+    rotate_jti_if_matches,
+    update_user_jti,
+)
 from app.database.db import get_db
 from app.schemas.user import RefreshTokenRequest, Token, UserBase
 
@@ -53,7 +58,7 @@ async def login(user: UserBase, db: Annotated[Session, Depends(get_db)]):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Wrong Username or Password",
         )
-    
+
     jti = await run_in_threadpool(update_user_jti, db, db_user.username) # type: ignore
     if not jti:
         raise HTTPException(status_code=500, detail="Could not update user session")
@@ -81,16 +86,11 @@ async def refresh_access_token(
     Validates the refresh token and issues a new pair of access and refresh tokens.
     """
     token = token_request.refresh_token
-    
+
     # 1. Decode the incoming refresh token
     payload = await run_in_threadpool(decode_token, token)
-    # --- START OF DEBUGGING STEP ---
-    # Add this print statement to see the decoded payload in your console
-    print("--- DECODED REFRESH TOKEN PAYLOAD ---")
-    print(payload)
-    print("-------------------------------------")
-    # --- END OF DEBUGGING STEP ---
-    
+    # No debug prints in production; payload validated below
+
     # 2. Check if the token is valid and is a 'refresh' token
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(

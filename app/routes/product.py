@@ -8,16 +8,14 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
+from app.core.logger import product_logger
 from app.crud.product import (
     create_product,
     delete_product,
     get_product,
     get_products,
 )
-
-from app.core.logger import product_logger
 from app.database.db import get_db
-from app.models.product import Product
 from app.schemas.errors import Error404Response
 from app.schemas.product import (
     ProductCreate,
@@ -32,7 +30,6 @@ from app.utils.file import (
     verify_file_size,
     verify_file_type,
 )
-
 
 response = {
     404: {"description": "product not found", "model": Error404Response},

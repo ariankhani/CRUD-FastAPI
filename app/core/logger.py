@@ -1,7 +1,8 @@
 # logger.py
 import logging
-from logging.handlers import RotatingFileHandler
 import os
+from logging.handlers import RotatingFileHandler
+
 
 def setup_logger(name, log_file, level=None, log_dir='logs') -> logging.Logger:
     if not os.path.exists(log_dir):

@@ -1,6 +1,7 @@
 # test_products.py
 
 import io
+
 from fastapi import status
 from fastapi.testclient import TestClient
 

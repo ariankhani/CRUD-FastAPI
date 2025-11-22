@@ -99,7 +99,7 @@ def created_item(test_client, auth_token):
     gif_data = base64.b64decode(gif_base64)
     dummy_file = io.BytesIO(gif_data)
     dummy_file.name = "dummy.gif"
-    
+
     files = {"image": (dummy_file.name, dummy_file, "image/gif")}
 
     response = test_client.post(
@@ -108,7 +108,7 @@ def created_item(test_client, auth_token):
         files=files,
         headers=headers
     )
-    
+
     assert response.status_code == 201, (
         f"Failed to create item. Response: {response.json()}"
     )

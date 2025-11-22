@@ -1,9 +1,7 @@
-from typing import Optional, Tuple
 import uuid
+from typing import Optional
 
 from sqlalchemy.orm import Session
-import jwt
-from jwt import InvalidTokenError, ExpiredSignatureError
 
 from app.core.security import hash_password
 from app.models.users import User
@@ -36,16 +34,16 @@ def update_user_jti(db: Session, username: str) -> str:
     if not user:
         # If the user doesn't exist, we can't proceed.
         return None # type: ignore
-    
+
     # Step 2: Create a new, completely random, and unique ID.
     new_jti = str(uuid.uuid4())
-    
+
     # Step 3: Update the user's 'jti' field in the database with the new ID.
     user.jti = new_jti # type: ignore
-    
+
     # Step 4: Save the change permanently.
     db.commit()
-    
+
     # Step 5: Return the new ID so it can be used to create the new tokens.
     return new_jti
 

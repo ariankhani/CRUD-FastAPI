@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pytest import Session
+from sqlalchemy.orm import Session
 
 from app.core.security import decode_token
 from app.crud.user import get_user_by_username
@@ -48,7 +48,7 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return payload 
+    return payload
 
 
 def get_user_from_refresh_token(

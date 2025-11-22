@@ -21,7 +21,7 @@ def create_order(db: Session, order_data: OrderCreate) -> OrderResponse:
     # db.refresh(new_order)
 
     order_items = []
-    
+
 
     for item in order_data.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
@@ -49,7 +49,7 @@ def create_order(db: Session, order_data: OrderCreate) -> OrderResponse:
 async def update_order(db: Session, order_id: int, order: OrderCreate):
     order_update = get_order(db, order_id)
     if not order_update:
-        return None
+        return
 
 
 

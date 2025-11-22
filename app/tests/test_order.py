@@ -1,7 +1,7 @@
 import pytest
+from fastapi import status
 
 from app.tests.conftest import TestClient
-from fastapi import status
 
 
 @pytest.fixture
