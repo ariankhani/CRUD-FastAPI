@@ -6,10 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       # Mount the entire project directory to the container
       # This allows for hot-reloading when you change code
       - ./:/app
     command: >
       sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped

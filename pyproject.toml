@@ -8,6 +8,7 @@ dependencies = [
     "aiofiles==24.1.0",
     "argon2-cffi>=25.1.0",
     "bcrypt>=4.1.0",
+    "debugpy>=1.8.17",
     "fastapi==0.115.12",
     "git-cliff>=2.8.0",
     "httpx==0.28.1",
